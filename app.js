@@ -12,14 +12,36 @@ let proximoId = tareas.length > 0 ? tareas[tareas.length - 1].id + 1 : 1;
 const renderizarTareas = () => {
   listadoTareas.innerHTML = '';
 
-  tareas.forEach((tarea) => {
+  // Crear copia ordenada de las tareas
+  const tareasOrdenadas = [...tareas].sort((a, b) => {
+    // Si una tarea está completada y la otra no, la completada va al final
+    if (a.completada && !b.completada) return 1;
+    if (!a.completada && b.completada) return -1;
+    
+    // Si ambas están completadas o ambas están pendientes, ordenar por fecha
+    const fechaA = new Date(a.vencimiento);
+    const fechaB = new Date(b.vencimiento);
+    return fechaA - fechaB;
+  });
+  tareasOrdenadas.forEach((tarea) => {
     const itemTarea = document.createElement('li');
+
+    // Verificar si la tarea está expirada
+    const estaExpirada = new Date(tarea.vencimiento) < new Date();
+
     itemTarea.classList.add(
       'list-group-item',
       'd-flex',
       'justify-content-between',
       'align-items-center'
     );
+
+    // Agregar clase si está expirada o completada
+    if (tarea.completada) {
+      itemTarea.classList.add('bg-success', 'text-white');
+    } else if (estaExpirada) {
+      itemTarea.classList.add('bg-danger', 'text-white');
+    }
 
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
@@ -30,18 +52,26 @@ const renderizarTareas = () => {
 
     const infoTarea = document.createElement('span');
     infoTarea.innerHTML = `
-     <strong> ${tarea.nombre}</strong>
+     <strong>${tarea.nombre}</strong>
      Prioridad: ${tarea.prioridad}
-     <strong>Vencimiento : ${tarea.vencimiento}</strong>`;
+     <strong>Vencimiento: ${tarea.vencimiento}</strong>
+     ${estaExpirada 
+       ? '<span class="badge bg-warning text-dark ms-2">EXPIRADA</span>' 
+       : ''}
+     ${tarea.completada
+       ? '<span class="badge bg-info text-dark ms-2">COMPLETADA</span>'
+       : estaExpirada
+         ? '<span class="badge bg-danger text-white ms-2">NO COMPLETADA</span>'
+         : ''}`;
 
     const botonEliminar = document.createElement('button');
     botonEliminar.textContent = 'Eliminar';
-    botonEliminar.classList.add('btn', 'btn-danger');
+    botonEliminar.classList.add('btn', 'btn-danger', 'ms-2');
     botonEliminar.addEventListener('click', () => eliminarTarea(tarea.id));
 
     const botonVerVencimiento = document.createElement('button');
     botonVerVencimiento.textContent = 'Ver vencimiento';
-    botonVerVencimiento.classList.add('btn', 'btn-secondary');
+    botonVerVencimiento.classList.add('btn', 'btn-secondary', 'ms-2');
     botonVerVencimiento.addEventListener('click', () =>
       mostrarVencimiento(tarea.id)
     );
@@ -54,7 +84,6 @@ const renderizarTareas = () => {
   });
   mostrarTareasPendientes();
 };
-
 const agregarTareas = () => {
   const nombre = nombreTarea.value;
   const prioridad = prioridadTarea.value;
@@ -113,8 +142,6 @@ const marcarComoCompletada = (checkbox, id) => {
   }
 };
 
-renderizarTareas();
-agregarTarea.addEventListener('click', agregarTareas);
 //Mostrar vencimiento
 function mostrarVencimiento(id) {
   // Asegurarse de tener las tareas más recientes
@@ -327,8 +354,8 @@ function mostrarVencimiento(id) {
 
     //Segundos expirada
     else if (SegundosRestantes <= -1 && SegundosRestantes > -60) {
-      mensaje += `${tarea.nombre} - EXPIRO hace ${Math.abs(
-        SegundosRestantes
+      mensaje += `${tarea.nombre} - EXPIRO hace ${Math.trunc(Math.abs(
+        SegundosRestantes)
       )} segundos.\n`;
     }
     if (tareas.length >= 1) {
@@ -342,3 +369,10 @@ function mostrarVencimiento(id) {
     }
   }
 }
+
+renderizarTareas();
+agregarTarea.addEventListener('click', agregarTareas);
+setInterval(() => {
+  console.log('Actualizando lista de tareas...'); // Para verificar que se está ejecutando
+  renderizarTareas();
+}, 1000); // 1000 milisegundos = 1 segundos
