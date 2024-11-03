@@ -5,28 +5,100 @@ const agregarTarea = document.getElementById('agregarTarea');
 const listadoTareas = document.getElementById('listadoTareas');
 const tareasPendientes = document.getElementById('tareasPendientes');
 
-const tareas = JSON.parse(localStorage.getItem('tareas')) || [];
+let tareas = JSON.parse(localStorage.getItem('tareas')) || [];
 
 let proximoId = tareas.length > 0 ? tareas[tareas.length - 1].id + 1 : 1;
+// Agregar esta nueva función de ordenamiento
+const ordenarTareas = (tareas) => {
+  const ahora = new Date();
+  const prioridadValor = {
+      'Alta': 1,
+      'Media': 2,
+      'Baja': 3
+  };
+
+  return tareas.sort((a, b) => {
+      const aExpirada = new Date(a.vencimiento) < ahora;
+      const bExpirada = new Date(b.vencimiento) < ahora;
+
+      // Si ambas están expiradas, ordenar por fecha de vencimiento (más reciente primero)
+      if (aExpirada && bExpirada) {
+          return new Date(b.vencimiento) - new Date(a.vencimiento);
+      }
+
+      // Si solo una está expirada, esa va después
+      if (aExpirada) return 1;
+      if (bExpirada) return -1;
+
+      // Si una tarea está completada y la otra no, la completada va al final
+      if (a.completada && !b.completada) return 1;
+      if (!a.completada && b.completada) return -1;
+
+      // Si ambas están en el mismo estado (completadas o no completadas)
+      if (a.completada === b.completada) {
+          // Ordenar por prioridad si están pendientes
+          if (!a.completada) {
+              if (prioridadValor[a.prioridad] !== prioridadValor[b.prioridad]) {
+                  return prioridadValor[a.prioridad] - prioridadValor[b.prioridad];
+              }
+          }
+          // Si tienen la misma prioridad o están completadas, ordenar por fecha
+          return new Date(a.vencimiento) - new Date(b.vencimiento);
+      }
+      return 0;
+  });
+};
 
 const renderizarTareas = () => {
   listadoTareas.innerHTML = '';
-
-  // Crear copia ordenada de las tareas
+  
   const tareasOrdenadas = [...tareas].sort((a, b) => {
-    // Si una tarea está completada y la otra no, la completada va al final
-    if (a.completada && !b.completada) return 1;
-    if (!a.completada && b.completada) return -1;
+    const ahora = new Date();
+    const aExpirada = new Date(a.vencimiento) < ahora;
+    const bExpirada = new Date(b.vencimiento) < ahora;
     
-    // Si ambas están completadas o ambas están pendientes, ordenar por fecha
-    const fechaA = new Date(a.vencimiento);
-    const fechaB = new Date(b.vencimiento);
-    return fechaA - fechaB;
+    // Si una está completada y la otra no
+    if (a.completada !== b.completada) {
+      return a.completada ? 1 : -1;
+    }
+
+    // Si ambas están completadas, ordenar por fecha más alejada primero
+    if (a.completada && b.completada) {
+      return new Date(b.vencimiento) - new Date(a.vencimiento);
+    }
+
+    // Para tareas no completadas
+    if (!a.completada && !b.completada) {
+      // Si ambas están expiradas, ordenar por fecha de vencimiento (más próxima primero)
+      if (aExpirada && bExpirada) {
+        return new Date(a.vencimiento) - new Date(b.vencimiento);
+      }
+      
+      // Si solo una está expirada, esa va primero
+      if (aExpirada) return -1;
+      if (bExpirada) return 1;
+      
+      // Si ninguna está expirada, ordenar por prioridad
+      const prioridadValor = {
+        'Alta': 1,
+        'Media': 2,
+        'Baja': 3
+      };
+      
+      if (prioridadValor[a.prioridad] !== prioridadValor[b.prioridad]) {
+        return prioridadValor[a.prioridad] - prioridadValor[b.prioridad];
+      }
+      
+      // Si tienen la misma prioridad, ordenar por fecha
+      return new Date(a.vencimiento) - new Date(b.vencimiento);
+    }
+    
+    return 0;
   });
+
   tareasOrdenadas.forEach((tarea) => {
     const itemTarea = document.createElement('li');
-
-    // Verificar si la tarea está expirada
+    // El resto de tu código para crear los elementos permanece igual
     const estaExpirada = new Date(tarea.vencimiento) < new Date();
 
     itemTarea.classList.add(
@@ -36,7 +108,6 @@ const renderizarTareas = () => {
       'align-items-center'
     );
 
-    // Agregar clase si está expirada o completada
     if (tarea.completada) {
       itemTarea.classList.add('bg-success', 'text-white');
     } else if (estaExpirada) {
