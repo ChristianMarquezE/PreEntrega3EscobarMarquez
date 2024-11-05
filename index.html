@@ -8,11 +8,12 @@
       rel="stylesheet"
       integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
       crossorigin="anonymous" />
+      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <title>Document</title>
   </head>
   <body class="bg-light">
     <div class="container mt-5">
-      <h1 class="text-center mb-4">Gestion de tareas</h1>
+      <h1 class="text-center mb-4">App de Gestion de tareas</h1>
 
       <div class="card p-4 shadow">
         <!-- Nombre -->
@@ -46,17 +47,22 @@
 
       <!-- Agregar -->
       <button class="btn btn-warning" id="agregarTarea">Agregar</button>
-
+      
       <div class="mt-5">
         <h2>Listado de tareas</h2>
-        <button class="btn btn-secondary" id="ocultarExpiradas">Ocultar tareas expiradas</button>
+        <button class="btn btn-secondary mb-3" id="ocultarExpiradas">Ocultar tareas expiradas</button>
+        <p id="tareasPendientes"></p>
+        
+        <!-- Filtro de fecha - ahora debajo de tareas pendientes -->
+        <div class="mb-3">
+          <label class="form-label" for="filtroFecha">Mostrar tareas hasta:</label>
+          <input class="form-control" type="datetime-local" id="filtroFecha">
+        </div>
       </div>
-        <ul class="list-group" id="listadoTareas"></ul>
-
-        <span class="mt-3" id="tareasPendientes"></span>
-      </div>
-      
+    
+      <ul class="list-group" id="listadoTareas"></ul>
     </div>
+      
 
 <!-- Modal -->
 <div class="modal fade" id="vencimientoModal" tabindex="-1" aria-labelledby="vencimientoModalLabel" aria-hidden="true">
@@ -71,6 +77,7 @@
           </div>
       </div>
   </div>
+
 </div>
 
     <script src="./app.js"></script>

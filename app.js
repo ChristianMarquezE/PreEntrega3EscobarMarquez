@@ -9,26 +9,77 @@ const tareas = JSON.parse(localStorage.getItem('tareas')) || [];
 
 let proximoId = tareas.length > 0 ? tareas[tareas.length - 1].id + 1 : 1;
 let mostrarExpiradas = true; // Variable para controlar la visibilidad de las tareas expiradas
+let fechaFiltro = null;
+
+// Agregar evento al calendario de filtro
+const filtroFecha = document.getElementById('filtroFecha');
+filtroFecha.addEventListener('change', (e) => {
+  fechaFiltro = e.target.value ? new Date(e.target.value) : null;
+  renderizarTareas();
+});
 const renderizarTareas = () => {
   listadoTareas.innerHTML = '';
 
-  // Crear copia ordenada de las tareas
   const tareasOrdenadas = [...tareas].sort((a, b) => {
-    // Si una tarea está completada y la otra no, la completada va al final
+    // Primero ordenar por completada
     if (a.completada && !b.completada) return 1;
     if (!a.completada && b.completada) return -1;
 
-    // Si ambas están completadas o ambas están pendientes, ordenar por fecha
     const fechaA = new Date(a.vencimiento);
     const fechaB = new Date(b.vencimiento);
+    const hoy = new Date();
+
+    // Si ambas están completadas, ordenar por fecha más futura primero
+    if (a.completada && b.completada) {
+      return fechaB - fechaA; // Orden inverso para mostrar las más futuras primero
+    }
+
+    // Si ninguna está completada
+    if (!a.completada && !b.completada) {
+      const aExpirada = fechaA < hoy;
+      const bExpirada = fechaB < hoy;
+
+      // Si una está expirada y la otra no
+      if (aExpirada && !bExpirada) return -1;
+      if (!aExpirada && bExpirada) return 1;
+
+      // Si ambas están expiradas, ordenar por tiempo de caducidad (más reciente primero)
+      if (aExpirada && bExpirada) {
+        return fechaB - fechaA; // Orden inverso para mostrar las más recientes primero
+      }
+
+      // Si ninguna está expirada, ordenar por prioridad
+      const prioridades = { Alta: 0, Media: 1, Baja: 2 };
+      if (prioridades[a.prioridad] !== prioridades[b.prioridad]) {
+        return prioridades[a.prioridad] - prioridades[b.prioridad];
+      }
+      // Si tienen la misma prioridad, ordenar por fecha
+      return fechaA - fechaB;
+    }
+
+    // Este return no debería alcanzarse, pero lo dejamos por si acaso
     return fechaA - fechaB;
   });
   tareasOrdenadas.forEach((tarea) => {
-    const estaExpirada = new Date(tarea.vencimiento) < new Date();
+    const fechaTarea = new Date(tarea.vencimiento);
+    const hoy = new Date();
+    const estaExpirada = fechaTarea < hoy;
+
+    // Filtrar por fecha y hora si hay una fecha de filtro seleccionada
+    if (fechaFiltro) {
+      const fechaFiltroObj = new Date(fechaFiltro);
+      const fechaTareaObj = new Date(tarea.vencimiento);
+
+      // Comparar directamente los timestamps (incluye fecha y hora)
+      if (fechaTareaObj > fechaFiltroObj) {
+        return;
+      }
+    }
 
     // Si mostrarExpiradas es falso y la tarea está expirada, no la renderizamos
     if (!mostrarExpiradas && estaExpirada) return;
 
+    // Resto del código para crear y mostrar la tarea...
     const itemTarea = document.createElement('li');
     itemTarea.classList.add(
       'list-group-item',
@@ -74,7 +125,6 @@ const renderizarTareas = () => {
     botonEliminar.addEventListener('click', () => eliminarTarea(tarea.id));
 
     const botonVerVencimiento = document.createElement('button');
-    // Cambiar el texto del botón según si la tarea está expirada
     botonVerVencimiento.textContent = estaExpirada
       ? 'Tiempo expirada'
       : 'Ver vencimiento';
@@ -89,15 +139,17 @@ const renderizarTareas = () => {
     itemTarea.append(botonVerVencimiento);
     listadoTareas.append(itemTarea);
   });
+
   mostrarTareasPendientes();
 };
+
 const botonOcultarExpiradas = document.getElementById('ocultarExpiradas');
 botonOcultarExpiradas.addEventListener('click', () => {
-  mostrarExpiradas = !mostrarExpiradas; // Cambia el estado
+  mostrarExpiradas = !mostrarExpiradas;
   botonOcultarExpiradas.textContent = mostrarExpiradas
     ? 'Ocultar tareas expiradas'
-    : 'Mostrar tareas expiradas'; // Cambia el texto del botón
-  renderizarTareas(); // Vuelve a renderizar las tareas
+    : 'Mostrar tareas expiradas';
+  renderizarTareas();
 });
 
 const agregarTareas = () => {
@@ -105,7 +157,7 @@ const agregarTareas = () => {
   const prioridad = prioridadTarea.value;
   const vencimiento = fechaVencimiento.value;
 
-  /* if (nombre && prioridad && vencimiento) {
+  if (nombre && prioridad && vencimiento) {
     tareas.push({
       id: proximoId++,
       nombre: nombre,
@@ -114,25 +166,31 @@ const agregarTareas = () => {
       completada: false,
     });
 
-    localStorage.setItem("tareas", JSON.stringify(tareas));
+    localStorage.setItem('tareas', JSON.stringify(tareas));
     renderizarTareas();
+
+    // Limpiar los campos del formulario
+    nombreTarea.value = '';
+    prioridadTarea.value = 'Alta'; // O el valor por defecto que prefieras
+    fechaVencimiento.value = '';
+
+    // Mostrar alerta de éxito con SweetAlert2
+    Swal.fire({
+      title: '¡Éxito!',
+      text: 'Tarea agregada correctamente',
+      icon: 'success',
+      confirmButtonText: 'Ok'
+    });
   } else {
-    alert("Rellena todos los campos");
-  } */
-
-  nombre && prioridad && vencimiento
-    ? tareas.push({
-        id: proximoId++,
-        nombre: nombre,
-        prioridad: prioridad,
-        vencimiento: vencimiento,
-        completada: false,
-      })
-    : alert('Rellena todos los campos');
-  localStorage.setItem('tareas', JSON.stringify(tareas));
-  renderizarTareas();
+    // Alerta de error si no se rellenan todos los campos
+    Swal.fire({
+      title: 'Error',
+      text: 'Por favor, rellena todos los campos',
+      icon: 'error',
+      confirmButtonText: 'Ok'
+    });
+  }
 };
-
 const eliminarTarea = (id) => {
   const indice = tareas.findIndex((tarea) => tarea.id === id);
 
