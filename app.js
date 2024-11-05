@@ -171,7 +171,7 @@ const agregarTareas = () => {
 
     // Limpiar los campos del formulario
     nombreTarea.value = '';
-    prioridadTarea.value = 'Alta'; // O el valor por defecto que prefieras
+    prioridadTarea.value = 'Media'; // Cambiado de 'Alta' a 'Media'
     fechaVencimiento.value = '';
 
     // Mostrar alerta de éxito con SweetAlert2
@@ -179,7 +179,7 @@ const agregarTareas = () => {
       title: '¡Éxito!',
       text: 'Tarea agregada correctamente',
       icon: 'success',
-      confirmButtonText: 'Ok'
+      confirmButtonText: 'Ok',
     });
   } else {
     // Alerta de error si no se rellenan todos los campos
@@ -187,7 +187,7 @@ const agregarTareas = () => {
       title: 'Error',
       text: 'Por favor, rellena todos los campos',
       icon: 'error',
-      confirmButtonText: 'Ok'
+      confirmButtonText: 'Ok',
     });
   }
 };
