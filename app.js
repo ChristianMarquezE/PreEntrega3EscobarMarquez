@@ -149,6 +149,18 @@ botonOcultarExpiradas.addEventListener('click', () => {
   botonOcultarExpiradas.textContent = mostrarExpiradas
     ? 'Ocultar tareas expiradas'
     : 'Mostrar tareas expiradas';
+
+  // Mostrar el toast con el mensaje correspondiente
+  Toastify({
+    text: mostrarExpiradas ? "Mostrando tareas expiradas" : "Ocultando tareas expiradas",
+    duration: 3000,
+    gravity: "top", // `top` or `bottom`
+    position: "right", // `left`, `center` or `right`
+    style: {
+      background: "linear-gradient(to right, #00b09b, #96c93d)",
+    }
+  }).showToast();
+
   renderizarTareas();
 });
 
